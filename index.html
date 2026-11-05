@@ -825,7 +825,69 @@ function firebaseConfigIsReady(){
  return firebaseConfig.apiKey!=="YOUR_API_KEY" &&
         firebaseConfig.projectId!=="YOUR_PROJECT_ID";
 }
+// SAVE USER DASHBOARD TO FIREBASE
+async function saveUserDashboardToFirebase() {
+  const user = auth.currentUser;
+  if (!user || !db) return;
 
+  const userRef = db.collection("users").doc(user.uid);
+
+  const dashboardData = {
+    points: Math.max(0, Math.floor(Number(getNumber("kx_points")) || 0)),
+    coins: Math.max(0, Math.floor(Number(getNumber("kx_coins")) || 0)),
+    totalQuizzes: Math.max(0, Math.floor(Number(getNumber("kx_total_quizzes")) || 0)),
+    preferredLanguage: lang
+  };
+
+  try {
+    const doc = await userRef.get();
+
+    if (doc.exists) {
+      await userRef.update(dashboardData);
+    } else {
+      await userRef.set({
+        displayName: user.displayName || user.email.split("@")[0],
+        email: user.email,
+        preferredLanguage: lang,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        points: dashboardData.points,
+        coins: dashboardData.coins,
+        totalQuizzes: dashboardData.totalQuizzes
+      });
+    }
+
+    console.log("User dashboard saved successfully!");
+  } catch (error) {
+    console.error("Dashboard save error:", error);
+  }
+}
+
+ // LOAD USER DASHBOARD FROM FIREBASE
+async function loadUserDashboardFromFirebase(user) {
+  if (!user || !db) return;
+
+  try {
+    const userRef = db.collection("users").doc(user.uid);
+    const doc = await userRef.get();
+
+    if (doc.exists) {
+      const data = doc.data();
+
+      localStorage.setItem("kx_points", data.points || 0);
+      localStorage.setItem("kx_coins", data.coins || 0);
+      localStorage.setItem("kx_total_quizzes", data.totalQuizzes || 0);
+
+      updateDashboard();
+      console.log("User dashboard loaded successfully!");
+    } else {
+      await saveUserDashboardToFirebase();
+      updateDashboard();
+    }
+  } catch (error) {
+    console.error("Dashboard load error:", error);
+  }
+}
+ 
 // SAVE USER DASHBOARD TO FIREBASE
 async function saveUserDashboardToFirebase() {
   const user = auth.currentUser;
