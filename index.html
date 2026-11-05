@@ -811,6 +811,16 @@ const firebaseConfig = {
 let db=null;
 let auth = null;
 
+// Initialize Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+auth = firebase.auth();
+db = firebase.firestore();
+
+console.log("Firebase initialized successfully!");
+
 function firebaseConfigIsReady(){
  return firebaseConfig.apiKey!=="YOUR_API_KEY" &&
         firebaseConfig.projectId!=="YOUR_PROJECT_ID";
