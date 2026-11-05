@@ -1,0 +1,942 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>knowledgeXasija QUIZ</title>
+
+<meta name="description" content="knowledgeXasija QUIZ - Learn Something New Every Day">
+<meta name="theme-color" content="#102b54">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fc;color:#172033}
+header{background:#102b54;color:white;padding:17px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h2{margin:0}
+button,select,input,textarea{font:inherit}
+button{border:0;border-radius:9px;padding:12px 18px;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:#1769e0;color:white}
+.secondary{background:#e4edff;color:#174b9a}
+.success{background:#15945a;color:white}
+.warning{background:#f5a623;color:#222}
+.danger{background:#d94343;color:white}
+.hidden{display:none!important}
+main{max-width:1050px;margin:25px auto;padding:15px}
+section{background:white;padding:25px;border-radius:16px;box-shadow:0 4px 18px #142b5010;margin-bottom:20px}
+.hero{text-align:center;padding:45px 20px;background:linear-gradient(135deg,#12366b,#2678df);color:white}
+.hero h1{font-size:35px;margin:5px}
+.hero p{font-size:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.stat{background:#edf4ff;padding:18px;border-radius:12px;text-align:center}
+.stat h2{color:#1769e0;margin:5px}
+.stat p{margin:5px;color:#56647b}
+.category{padding:20px;background:#edf4ff;border-radius:12px;text-align:center;cursor:pointer;border:2px solid transparent}
+.category.selected{border-color:#1769e0;background:#dceaff}
+.category h3{margin:5px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1}
+input,select,textarea{padding:12px;border:1px solid #ccd5e2;border-radius:8px;width:100%;margin:7px 0}
+textarea{min-height:130px}
+.question{font-size:21px;font-weight:bold;margin:20px 0}
+.option{display:block;width:100%;text-align:left;margin:10px 0;background:#edf2fa;color:#172033;padding:15px}
+.option.correct{background:#d7f5e3;border:2px solid #15945a}
+.option.wrong{background:#ffe0e0;border:2px solid #d94343}
+#timerBar{height:9px;background:#e5eaf2;border-radius:20px;overflow:hidden;margin:12px 0}
+#timerProgress{height:100%;width:100%;background:#1769e0;transition:width 1s linear}
+.small{font-size:13px;color:#68768c}
+.badge-card{background:#fff5d9;border:1px solid #f0d58a;padding:13px;border-radius:10px}
+.history-item{padding:12px;border-bottom:1px solid #e8edf4}
+footer{text-align:center;padding:25px;color:#718096}
+#premiumButton{position:fixed;right:16px;bottom:18px;z-index:5}
+#dashboardButton{position:fixed;right:16px;bottom:75px;z-index:5}
+@media(max-width:600px){
+ header{padding:14px}
+ main{padding:10px}
+ section{padding:17px}
+ .hero h1{font-size:27px}
+ .question{font-size:18px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>🧠 knowledgeXasija QUIZ</h2>
+  <select id="languageSelect" onchange="changeLanguage(this.value)" style="width:auto">
+    <option value="en">English</option>
+    <option value="hi">हिन्दी</option>
+    <option value="pa">ਪੰਜਾਬੀ</option>
+  </select>
+</header>
+
+<main>
+
+<!-- PHASE 1: HOME -->
+<section id="home" class="hero">
+  <h1>knowledgeXasija QUIZ</h1>
+  <p id="heroText">Learn Something New Every Day!</p>
+  <p>📚 Learn • 🏆 Play • ⭐ Earn Points</p>
+  <button class="primary" onclick="showPage('setup')" id="startButton">Start Quiz</button>
+  <button class="secondary" onclick="openDashboard()">My Dashboard</button>
+</section>
+
+<!-- PHASE 2: QUIZ SETUP -->
+<section id="setup" class="hidden">
+  <h2 id="categoryHeading">Choose Your Quiz Category</h2>
+  <div class="grid" id="categoryGrid"></div>
+  <div style="margin-top:20px">
+    <label>Number of Questions</label>
+    <select id="questionCount">
+      <option value="5">5 Questions</option>
+      <option value="10" selected>10 Questions</option>
+      <option value="15">15 Questions</option>
+      <option value="20">20 Questions</option>
+    </select>
+  </div>
+  <div class="row" style="margin-top:15px">
+    <button class="primary" onclick="startQuiz()">Start Quiz</button>
+    <button class="secondary" onclick="showPage('home')">Back</button>
+  </div>
+</section>
+
+<!-- PHASE 3: QUIZ SCREEN -->
+<section id="quiz" class="hidden">
+  <div class="row">
+    <h3 id="questionNumber">Question 1</h3>
+    <h3 id="timerText" style="text-align:right">15s</h3>
+  </div>
+  <div id="timerBar"><div id="timerProgress"></div></div>
+  <div class="question" id="questionText"></div>
+  <div id="optionsContainer"></div>
+  <p id="feedback"></p>
+  <p id="explanation" class="small"></p>
+  <button class="primary" id="nextButton" onclick="nextQuestion()" disabled>Next Question</button>
+</section>
+
+<!-- PHASE 4: RESULT -->
+<section id="result" class="hidden" style="text-align:center">
+  <h1>🎉 Quiz Completed!</h1>
+  <h2 id="resultMessage">Good Job!</h2>
+  <div class="grid">
+    <div class="stat"><h2 id="finalScore">0</h2><p>Score</p></div>
+    <div class="stat"><h2 id="correctAnswers">0</h2><p>Correct Answers</p></div>
+    <div class="stat"><h2 id="accuracy">0%</h2><p>Accuracy</p></div>
+  </div>
+  <p id="rewardMessage"></p>
+  <div class="row">
+    <button class="primary" onclick="showPage('setup')">Play Again</button>
+    <button class="secondary" onclick="openDashboard()">Dashboard</button>
+    <button class="secondary" onclick="showPage('home')">Home</button>
+  </div>
+</section>
+
+<!-- PHASE 5: DASHBOARD -->
+<section id="dashboard" class="hidden">
+  <h1>🏆 My Dashboard</h1>
+  <p>Welcome to knowledgeXasija QUIZ!</p>
+
+  <div class="grid">
+    <div class="stat"><h2 id="totalPoints">0</h2><p>⭐ Total Points</p></div>
+    <div class="stat"><h2 id="totalCoins">0</h2><p>🪙 Coins</p></div>
+    <div class="stat"><h2 id="dailyStreak">0 🔥</h2><p>Daily Streak</p></div>
+    <div class="stat"><h2 id="totalQuizzes">0</h2><p>Completed Quizzes</p></div>
+  </div>
+
+  <h2>🎯 Daily Challenge</h2>
+  <div class="stat">
+    <p>Complete a quiz every day to maintain your streak.</p>
+    <button class="primary" onclick="startDailyQuiz()">Start Daily Challenge</button>
+  </div>
+
+  <h2>📅 Weekly Challenge</h2>
+  <div class="stat">
+    <p>Answer up to 20 questions. The number depends on available questions.</p>
+    <button class="primary" onclick="startSundayQuiz()">Start Weekly Challenge</button>
+  </div>
+
+  <h2>🏅 My Badges</h2>
+  <div class="grid" id="badgesContainer"></div>
+
+  <h2>🎁 Rewards Progress</h2>
+  <p id="rewardProgress">Earn points by completing quizzes.</p>
+  <div id="rewardBar" style="height:12px;background:#e5eaf2;border-radius:20px;overflow:hidden">
+    <div id="rewardFill" style="height:100%;width:0%;background:#15945a"></div>
+  </div>
+
+  <h2>📜 Quiz History</h2>
+  <div id="quizHistory"><p>No quiz history yet.</p></div>
+
+  <h2>🌍 Local Leaderboard</h2>
+  <div id="leaderboard"></div>
+
+  <div class="row" style="margin-top:20px">
+    <button class="primary" onclick="showPage('setup')">Play Quiz</button>
+    <button class="secondary" onclick="showPage('home')">Home</button>
+  </div>
+</section>
+
+<!-- PHASE 6: QUESTION IMPORT -->
+<section id="admin" class="hidden">
+  <h1>⚙️ Question Manager</h1>
+  <p>Import your own questions using JSON format.</p>
+  <textarea id="jsonQuestions" placeholder='[{"category":"GK","question":"What is the capital of India?","options":["Delhi","Mumbai","Chennai","Kolkata"],"answer":0,"explanation":"New Delhi is the capital of India."}]'></textarea>
+  <button class="primary" onclick="importQuestions()">Import Questions</button>
+  <button class="secondary" onclick="downloadSample()">Download Sample JSON</button>
+  <p id="importStatus"></p>
+  <button class="secondary" onclick="showPage('home')">Back Home</button>
+</section>
+
+<!-- PHASE 7: DAILY REWARDS -->
+<section id="rewards" class="hidden">
+  <h1>🎁 Rewards Centre</h1>
+  <div class="grid">
+    <div class="stat"><h2 id="rewardPoints">0</h2><p>Your Points</p></div>
+    <div class="stat"><h2 id="rewardCoins">0</h2><p>Your Coins</p></div>
+  </div>
+  <p>Complete quizzes to earn points and coins.</p>
+  <button class="primary" onclick="openDashboard()">Dashboard</button>
+</section>
+
+<!-- PHASE 8: CERTIFICATE -->
+<section id="certificate" class="hidden">
+  <div style="border:5px double #d2a43b;padding:30px;text-align:center">
+    <h1>🏆 Certificate of Achievement</h1>
+    <h2>knowledgeXasija QUIZ</h2>
+    <p>This certificate recognizes successful quiz participation.</p>
+    <h2 id="certificateName">Quiz Champion</h2>
+    <p id="certificateScore">Score: 0</p>
+    <p id="certificateDate"></p>
+    <button class="primary" onclick="window.print()">Print Certificate</button>
+  </div>
+  <button class="secondary" onclick="openDashboard()">Back</button>
+</section>
+
+<!-- PHASE 9: PREMIUM PLANS -->
+<section id="kxPremiumPage" class="hidden">
+  <h1>💎 Premium Plans</h1>
+  <p>Choose your learning experience.</p>
+  <div class="grid">
+    <div class="stat">
+      <h2>FREE</h2>
+      <h1>₹0</h1>
+      <p>Basic quizzes</p>
+      <p>Points and coins</p>
+      <p>Dashboard and streaks</p>
+      <button class="secondary" onclick="closePremiumPlans()">Continue Free</button>
+    </div>
+    <div class="stat">
+      <h2>PREMIUM</h2>
+      <h1>Coming Soon</h1>
+      <p>Advanced learning features</p>
+      <p>More practice options</p>
+      <p>Additional rewards</p>
+      <button class="primary" disabled>Payment Coming Soon</button>
+    </div>
+  </div>
+  <p class="small">Premium payments and activation are not enabled yet.</p>
+  <button class="secondary" onclick="closePremiumPlans()">Back</button>
+</section>
+
+</main>
+
+<button id="dashboardButton" class="primary" onclick="openDashboard()">🏆 Dashboard</button>
+<button id="premiumButton" class="warning" onclick="openPremiumPlans()">💎 Premium</button>
+
+<footer>© 2026 knowledgeXasija QUIZ | Learn Something New Every Day</footer>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+"use strict";
+
+/* =========================================
+   PHASE 1: APP DATA AND LANGUAGE
+========================================= */
+
+const translations = {
+ en:{
+  hero:"Learn Something New Every Day!",
+  start:"Start Quiz",
+  category:"Choose Your Quiz Category",
+  next:"Next Question",
+  time:"Time's Up!",
+  correct:"Correct Answer!",
+  wrong:"Incorrect Answer!",
+  completed:"Quiz Completed!",
+  back:"Back"
+ },
+ hi:{
+  hero:"हर दिन कुछ नया सीखें!",
+  start:"क्विज शुरू करें",
+  category:"अपनी क्विज श्रेणी चुनें",
+  next:"अगला सवाल",
+  time:"समय समाप्त!",
+  correct:"सही जवाब!",
+  wrong:"गलत जवाब!",
+  completed:"क्विज पूरा हुआ!",
+  back:"वापस"
+ },
+ pa:{
+  hero:"ਹਰ ਰੋਜ਼ ਕੁਝ ਨਵਾਂ ਸਿੱਖੋ!",
+  start:"ਕੁਇਜ਼ ਸ਼ੁਰੂ ਕਰੋ",
+  category:"ਆਪਣੀ ਕੁਇਜ਼ ਸ਼੍ਰੇਣੀ ਚੁਣੋ",
+  next:"ਅਗਲਾ ਸਵਾਲ",
+  time:"ਸਮਾਂ ਖਤਮ!",
+  correct:"ਸਹੀ ਜਵਾਬ!",
+  wrong:"ਗਲਤ ਜਵਾਬ!",
+  completed:"ਕੁਇਜ਼ ਪੂਰਾ ਹੋਇਆ!",
+  back:"ਵਾਪਸ"
+ }
+};
+
+let lang = localStorage.getItem("kx_language") || "en";
+
+function changeLanguage(value){
+ lang = translations[value] ? value : "en";
+ localStorage.setItem("kx_language",lang);
+ document.getElementById("languageSelect").value=lang;
+ document.getElementById("heroText").textContent=translations[lang].hero;
+ document.getElementById("startButton").textContent=translations[lang].start;
+ document.getElementById("categoryHeading").textContent=translations[lang].category;
+ document.getElementById("nextButton").textContent=translations[lang].next;
+ renderCategories();
+}
+
+const categories=[
+ {id:"All",icon:"🌟",name:"All Categories"},
+ {id:"GK",icon:"🌍",name:"General Knowledge"},
+ {id:"Science",icon:"🔬",name:"Science"},
+ {id:"History",icon:"📜",name:"History"},
+ {id:"Geography",icon:"🗺️",name:"Geography"},
+ {id:"Sports",icon:"🏏",name:"Sports"}
+];
+
+let selectedCategory="All";
+
+function renderCategories(){
+ const container=document.getElementById("categoryGrid");
+ container.innerHTML="";
+ categories.forEach(cat=>{
+  const div=document.createElement("div");
+  div.className="category"+(selectedCategory===cat.id?" selected":"");
+  div.innerHTML="<h2>"+cat.icon+"</h2><h3>"+cat.name+"</h3>";
+  div.onclick=()=>{
+   selectedCategory=cat.id;
+   renderCategories();
+  };
+  container.appendChild(div);
+ });
+}
+
+function showPage(id){
+ const pages=[
+  "home","setup","quiz","result","dashboard",
+  "admin","rewards","certificate","kxPremiumPage"
+ ];
+ pages.forEach(page=>{
+  const el=document.getElementById(page);
+  if(el)el.classList.add("hidden");
+ });
+ const target=document.getElementById(id);
+ if(target)target.classList.remove("hidden");
+ window.scrollTo(0,0);
+}
+
+/* =========================================
+   PHASE 2: QUESTION BANK
+========================================= */
+
+const defaultQuestions=[
+ {id:1,category:"GK",question:"What is the capital of India?",options:["Mumbai","New Delhi","Kolkata","Chennai"],answer:1,explanation:"New Delhi is the capital of India."},
+ {id:2,category:"GK",question:"How many days are there in a leap year?",options:["364","365","366","367"],answer:2,explanation:"A leap year has 366 days."},
+ {id:3,category:"GK",question:"Which is the largest planet?",options:["Earth","Mars","Jupiter","Venus"],answer:2,explanation:"Jupiter is the largest planet in our solar system."},
+ {id:4,category:"GK",question:"Which animal is known as the Ship of the Desert?",options:["Horse","Camel","Elephant","Lion"],answer:1,explanation:"Camels are commonly called the Ship of the Desert."},
+ {id:5,category:"Science",question:"What is the chemical symbol of water?",options:["CO2","O2","H2O","NaCl"],answer:2,explanation:"Water is H2O."},
+ {id:6,category:"Science",question:"Which planet is known as the Red Planet?",options:["Venus","Mars","Saturn","Mercury"],answer:1,explanation:"Mars appears reddish due to iron oxide on its surface."},
+ {id:7,category:"Science",question:"Which gas do plants absorb?",options:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],answer:2,explanation:"Plants absorb carbon dioxide during photosynthesis."},
+ {id:8,category:"Science",question:"How many bones are in an adult human body?",options:["206","201","210","250"],answer:0,explanation:"An average adult human has 206 bones."},
+ {id:9,category:"History",question:"Who was the first Mughal emperor of India?",options:["Akbar","Babur","Humayun","Shah Jahan"],answer:1,explanation:"Babur founded the Mughal Empire in India."},
+ {id:10,category:"History",question:"When did India become independent?",options:["1945","1946","1947","1950"],answer:2,explanation:"India became independent on 15 August 1947."},
+ {id:11,category:"Geography",question:"Which is the largest ocean?",options:["Atlantic","Indian","Arctic","Pacific"],answer:3,explanation:"The Pacific Ocean is the largest ocean."},
+ {id:12,category:"Geography",question:"Which is the highest mountain in the world?",options:["K2","Mount Everest","Kangchenjunga","Lhotse"],answer:1,explanation:"Mount Everest is the world's highest mountain above sea level."},
+ {id:13,category:"Geography",question:"Which continent is the Sahara Desert in?",options:["Asia","Africa","Europe","Australia"],answer:1,explanation:"The Sahara Desert is in northern Africa."},
+ {id:14,category:"Sports",question:"How many players are on a cricket team on the field?",options:["9","10","11","12"],answer:2,explanation:"A cricket team has 11 players on the field."},
+ {id:15,category:"Sports",question:"How many rings are in the Olympic symbol?",options:["4","5","6","7"],answer:1,explanation:"The Olympic symbol has five interlocking rings."},
+ {id:16,category:"Sports",question:"Which sport uses a shuttlecock?",options:["Tennis","Badminton","Football","Hockey"],answer:1,explanation:"Badminton is played using a shuttlecock."}
+];
+
+let importedQuestions=JSON.parse(localStorage.getItem("kx_imported_questions")||"[]");
+
+function getAllQuestions(){
+ return [...defaultQuestions,...importedQuestions];
+}
+
+/* =========================================
+   PHASE 3: QUIZ ENGINE
+========================================= */
+
+let quizQuestions=[];
+let currentIndex=0;
+let score=0;
+let correctCount=0;
+let timer=null;
+let timeLeft=15;
+let answered=false;
+let challengeMode="";
+
+function shuffleArray(array){
+ const copy=[...array];
+ for(let i=copy.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [copy[i],copy[j]]=[copy[j],copy[i]];
+ }
+ return copy;
+}
+
+function startQuiz(){
+ challengeMode="";
+ const all=getAllQuestions();
+ let pool=selectedCategory==="All"
+  ?all
+  :all.filter(q=>q.category===selectedCategory);
+
+ const count=Number(document.getElementById("questionCount").value);
+ pool=shuffleArray(pool).slice(0,count);
+
+ if(pool.length===0){
+  alert("No questions available in this category. Import more questions first.");
+  return;
+ }
+
+ beginQuiz(pool);
+}
+
+function beginQuiz(pool){
+ clearInterval(timer);
+ quizQuestions=pool;
+ currentIndex=0;
+ score=0;
+ correctCount=0;
+ showPage("quiz");
+ showQuestion();
+}
+
+function showQuestion(){
+ clearInterval(timer);
+ answered=false;
+ timeLeft=15;
+
+ const q=quizQuestions[currentIndex];
+ document.getElementById("questionNumber").textContent=
+  "Question "+(currentIndex+1)+" / "+quizQuestions.length;
+ document.getElementById("questionText").textContent=q.question;
+ document.getElementById("feedback").textContent="";
+ document.getElementById("explanation").textContent="";
+ document.getElementById("nextButton").disabled=true;
+
+ const options=document.getElementById("optionsContainer");
+ options.innerHTML="";
+
+ q.options.forEach((option,index)=>{
+  const button=document.createElement("button");
+  button.className="option";
+  button.textContent=String.fromCharCode(65+index)+". "+option;
+  button.onclick=()=>selectAnswer(index);
+  options.appendChild(button);
+ });
+
+ updateTimerDisplay();
+ timer=setInterval(()=>{
+  timeLeft--;
+  updateTimerDisplay();
+  if(timeLeft<=0){
+   clearInterval(timer);
+   if(!answered)selectAnswer(-1);
+  }
+ },1000);
+}
+
+function updateTimerDisplay(){
+ document.getElementById("timerText").textContent=timeLeft+"s";
+ document.getElementById("timerProgress").style.width=(timeLeft/15*100)+"%";
+}
+
+function selectAnswer(index){
+ if(answered)return;
+ answered=true;
+ clearInterval(timer);
+
+ const q=quizQuestions[currentIndex];
+ const buttons=document.querySelectorAll("#optionsContainer button");
+
+ buttons.forEach((button,i)=>{
+  button.disabled=true;
+  if(i===q.answer)button.classList.add("correct");
+  if(i===index && index!==q.answer)button.classList.add("wrong");
+ });
+
+ if(index===q.answer){
+  score+=10;
+  correctCount++;
+  document.getElementById("feedback").textContent="✅ "+translations[lang].correct;
+  document.getElementById("feedback").style.color="#15945a";
+ }else{
+  document.getElementById("feedback").textContent=
+   index===-1?"⏰ "+translations[lang].time:"❌ "+translations[lang].wrong;
+  document.getElementById("feedback").style.color="#d94343";
+ }
+
+ document.getElementById("explanation").textContent=q.explanation||"";
+ document.getElementById("nextButton").disabled=false;
+}
+
+function nextQuestion(){
+ if(!answered)return;
+ currentIndex++;
+ if(currentIndex<quizQuestions.length){
+  showQuestion();
+ }else{
+  finishQuiz();
+ }
+}
+
+function finishQuiz(){
+ clearInterval(timer);
+ const accuracy=Math.round(correctCount/quizQuestions.length*100);
+
+ document.getElementById("finalScore").textContent=score;
+ document.getElementById("correctAnswers").textContent=
+  correctCount+" / "+quizQuestions.length;
+ document.getElementById("accuracy").textContent=accuracy+"%";
+ document.getElementById("resultMessage").textContent=
+  accuracy>=80?"Excellent Work! 🏆":
+  accuracy>=50?"Good Job! 👍":"Keep Practising! 💪";
+
+ const earnedPoints=score;
+ const earnedCoins=Math.floor(score/20);
+
+ addRewards(earnedPoints,earnedCoins);
+ updateDailyStreak();
+ saveQuizHistory({
+  date:new Date().toLocaleString(),
+  score:score,
+  total:quizQuestions.length,
+  correct:correctCount,
+  accuracy:accuracy
+ });
+
+ document.getElementById("rewardMessage").textContent=
+  "You earned "+earnedPoints+" points and "+earnedCoins+" coins!";
+
+ document.getElementById("certificateName").textContent="Quiz Champion";
+ document.getElementById("certificateScore").textContent=
+  "Score: "+score+" | Accuracy: "+accuracy+"%";
+ document.getElementById("certificateDate").textContent=
+  new Date().toLocaleDateString();
+
+ showPage("result");
+ updateDashboard();
+}
+
+/* =========================================
+   PHASE 4: POINTS, COINS AND STREAK
+========================================= */
+
+function getNumber(key){
+ return Number(localStorage.getItem(key)||0);
+}
+
+function addRewards(points,coins){
+ localStorage.setItem("kx_points",getNumber("kx_points")+points);
+ localStorage.setItem("kx_coins",getNumber("kx_coins")+coins);
+ localStorage.setItem("kx_total_quizzes",getNumber("kx_total_quizzes")+1);
+}
+
+let quizStreak=getNumber("kx_quiz_streak");
+let lastQuizDate=localStorage.getItem("kx_last_quiz_date")||"";
+
+function updateDailyStreak(){
+ const today=new Date().toDateString();
+
+ if(lastQuizDate===today)return;
+
+ const yesterday=new Date();
+ yesterday.setDate(yesterday.getDate()-1);
+
+ if(lastQuizDate===yesterday.toDateString()){
+  quizStreak++;
+ }else{
+  quizStreak=1;
+ }
+
+ lastQuizDate=today;
+ localStorage.setItem("kx_quiz_streak",quizStreak);
+ localStorage.setItem("kx_last_quiz_date",lastQuizDate);
+}
+
+function updateStreakDashboard(){
+ const streakElement=document.getElementById("dailyStreak");
+ if(!streakElement)return;
+ const streak=getNumber("kx_quiz_streak");
+ streakElement.textContent=streak+" 🔥";
+}
+
+/* =========================================
+   PHASE 5: DASHBOARD AND HISTORY
+========================================= */
+
+function saveQuizHistory(item){
+ let history=JSON.parse(localStorage.getItem("kx_history")||"[]");
+ history.unshift(item);
+ history=history.slice(0,20);
+ localStorage.setItem("kx_history",JSON.stringify(history));
+}
+
+function renderHistory(){
+ const container=document.getElementById("quizHistory");
+ const history=JSON.parse(localStorage.getItem("kx_history")||"[]");
+ container.innerHTML="";
+
+ if(!history.length){
+  container.textContent="No quiz history yet.";
+  return;
+ }
+
+ history.forEach(item=>{
+  const div=document.createElement("div");
+  div.className="history-item";
+  div.textContent=
+   item.date+" | Score: "+item.score+
+   " | Correct: "+item.correct+"/"+item.total+
+   " | Accuracy: "+item.accuracy+"%";
+  container.appendChild(div);
+ });
+}
+
+function renderBadges(){
+ const points=getNumber("kx_points");
+ const quizzes=getNumber("kx_total_quizzes");
+ const streak=getNumber("kx_quiz_streak");
+
+ const badges=[
+  {name:"First Quiz",icon:"🎯",earned:quizzes>=1},
+  {name:"Quiz Explorer",icon:"📚",earned:quizzes>=5},
+  {name:"Knowledge Master",icon:"🧠",earned:points>=500},
+  {name:"Point Collector",icon:"⭐",earned:points>=1000},
+  {name:"7 Day Streak",icon:"🔥",earned:streak>=7}
+ ];
+
+ const container=document.getElementById("badgesContainer");
+ container.innerHTML="";
+
+ badges.forEach(badge=>{
+  const div=document.createElement("div");
+  div.className="badge-card";
+  div.innerHTML="<h2>"+(badge.earned?badge.icon:"🔒")+"</h2><b>"+
+   badge.name+"</b><p>"+(badge.earned?"Unlocked":"Locked")+"</p>";
+  container.appendChild(div);
+ });
+}
+
+function renderLeaderboard(){
+ const container=document.getElementById("leaderboard");
+ const points=getNumber("kx_points");
+ container.innerHTML=
+  "<div class='history-item'>🥇 You — "+points+" points</div>"+
+  "<p class='small'>This is your device's local score, not a global leaderboard.</p>";
+}
+
+function updateDashboard(){
+ document.getElementById("totalPoints").textContent=getNumber("kx_points");
+ document.getElementById("totalCoins").textContent=getNumber("kx_coins");
+ document.getElementById("totalQuizzes").textContent=getNumber("kx_total_quizzes");
+
+ updateStreakDashboard();
+ renderBadges();
+ renderHistory();
+ renderLeaderboard();
+
+ const points=getNumber("kx_points");
+ const progress=points%500;
+ document.getElementById("rewardProgress").textContent=
+  progress+" / 500 points toward the next reward milestone.";
+ document.getElementById("rewardFill").style.width=(progress/500*100)+"%";
+ document.getElementById("rewardPoints").textContent=points;
+ document.getElementById("rewardCoins").textContent=getNumber("kx_coins");
+}
+
+function openDashboard(){
+ updateDashboard();
+ showPage("dashboard");
+}
+
+/* =========================================
+   PHASE 6: DAILY AND WEEKLY CHALLENGES
+========================================= */
+
+function startDailyQuiz(){
+ challengeMode="daily";
+ const pool=shuffleArray(getAllQuestions()).slice(0,5);
+ if(!pool.length){
+  challengeMode="";
+  alert("No questions available.");
+  return;
+ }
+ beginQuiz(pool);
+}
+
+function startSundayQuiz(){
+ challengeMode="weekly";
+ const pool=shuffleArray(getAllQuestions()).slice(0,20);
+ if(!pool.length){
+  challengeMode="";
+  alert("No questions available.");
+  return;
+ }
+ alert("Your weekly challenge has "+pool.length+" available questions.");
+ beginQuiz(pool);
+}
+
+/* =========================================
+   PHASE 7: QUESTION IMPORT
+========================================= */
+
+function importQuestions(){
+ const input=document.getElementById("jsonQuestions").value.trim();
+ const status=document.getElementById("importStatus");
+
+ try{
+  const data=JSON.parse(input);
+
+  if(!Array.isArray(data)||data.length===0){
+   throw new Error("JSON must contain a non-empty array.");
+  }
+
+  data.forEach((q,index)=>{
+   if(
+    !q.question||
+    !Array.isArray(q.options)||
+    q.options.length<2||
+    !Number.isInteger(q.answer)||
+    q.answer<0||
+    q.answer>=q.options.length
+   ){
+    throw new Error("Invalid question format at item "+(index+1));
+   }
+  });
+
+  importedQuestions=[...importedQuestions,...data];
+  localStorage.setItem("kx_imported_questions",JSON.stringify(importedQuestions));
+
+  status.textContent="✅ Successfully imported "+data.length+" questions!";
+  document.getElementById("jsonQuestions").value="";
+ }catch(error){
+  status.textContent="❌ Import Error: "+error.message;
+ }
+}
+
+function downloadSample(){
+ const sample=[
+  {
+   category:"GK",
+   question:"Which is the largest ocean?",
+   options:["Indian","Pacific","Atlantic","Arctic"],
+   answer:1,
+   explanation:"The Pacific Ocean is the largest."
+  }
+ ];
+
+ const blob=new Blob([JSON.stringify(sample,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="knowledgeXasija-sample-questions.json";
+ a.click();
+ URL.revokeObjectURL(url);
+}
+
+/* =========================================
+   PHASE 8: CERTIFICATE AND REWARDS
+========================================= */
+
+function openCertificate(){
+ const history=JSON.parse(localStorage.getItem("kx_history")||"[]");
+ if(!history.length){
+  alert("Complete a quiz first to get a certificate.");
+  return;
+ }
+
+ const latest=history[0];
+ document.getElementById("certificateScore").textContent=
+  "Score: "+latest.score+" | Accuracy: "+latest.accuracy+"%";
+ document.getElementById("certificateDate").textContent=latest.date;
+ showPage("certificate");
+}
+
+/* =========================================
+   PHASE 9: PREMIUM AND FIREBASE
+========================================= */
+
+function openPremiumPlans(){
+ showPage("kxPremiumPage");
+}
+
+function closePremiumPlans(){
+ openDashboard();
+}
+
+/* Firebase configuration:
+   Replace these placeholders with your own Firebase Web App config.
+   Firebase questions are optional; the built-in quiz works without it.
+*/
+
+const firebaseConfig={
+ apiKey:"YOUR_API_KEY",
+ authDomain:"YOUR_AUTH_DOMAIN",
+ projectId:"YOUR_PROJECT_ID",
+ storageBucket:"YOUR_STORAGE_BUCKET",
+ messagingSenderId:"YOUR_SENDER_ID",
+ appId:"YOUR_APP_ID"
+};
+
+let db=null;
+
+function firebaseConfigIsReady(){
+ return firebaseConfig.apiKey!=="YOUR_API_KEY" &&
+        firebaseConfig.projectId!=="YOUR_PROJECT_ID";
+}
+
+async function loadFirebaseQuestions(){
+ if(!firebaseConfigIsReady()){
+  console.log("Firebase config not added. Local quiz mode is active.");
+  return;
+ }
+
+ try{
+  if(typeof firebase==="undefined"){
+   console.warn("Firebase SDK could not be loaded.");
+   return;
+  }
+
+  if(!firebase.apps.length){
+   firebase.initializeApp(firebaseConfig);
+  }
+
+  db=firebase.firestore();
+  const snapshot=await db.collection("questions").get();
+
+  const remoteQuestions=[];
+  snapshot.forEach(doc=>{
+   const q=doc.data();
+   if(q.question&&Array.isArray(q.options)&&Number.isInteger(q.answer)){
+    remoteQuestions.push({
+     ...q,
+     id:"firebase_"+doc.id
+    });
+   }
+  });
+
+  if(remoteQuestions.length){
+   importedQuestions=[...importedQuestions,...remoteQuestions];
+   console.log("Firebase questions loaded:",remoteQuestions.length);
+  }
+ }catch(error){
+  console.error("Firebase question loading failed:",error);
+ }
+}
+
+/* =========================================
+   APP START
+========================================= */
+
+function initializeApp(){
+ renderCategories();
+ changeLanguage(lang);
+ updateDashboard();
+ showPage("home");
+ loadFirebaseQuestions();
+}
+
+initializeApp();
+
+/* =========================================
+   PHASE 10: PWA INSTALL AND OFFLINE SUPPORT
+========================================= */
+
+let deferredInstallPrompt = null;
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+
+  if (document.getElementById("installAppButton")) return;
+
+  const installButton = document.createElement("button");
+
+  installButton.id = "installAppButton";
+  installButton.className = "primary";
+  installButton.textContent = "📲 Install App";
+  installButton.style.margin = "8px";
+
+  document.querySelector("header").appendChild(installButton);
+
+  installButton.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+
+    deferredInstallPrompt.prompt();
+
+    const result = await deferredInstallPrompt.userChoice;
+
+    if (result.outcome === "accepted") {
+      installButton.textContent = "✅ App Installed";
+    }
+
+    deferredInstallPrompt = null;
+    installButton.remove();
+  });
+});
+
+window.addEventListener("appinstalled", () => {
+  const button = document.getElementById("installAppButton");
+
+  if (button) {
+    button.remove();
+  }
+
+  console.log("knowledgeXasija QUIZ installed successfully.");
+});
+
+/* Register Service Worker */
+
+if ("serviceWorker" in navigator &&
+    (location.protocol === "https:" ||
+     location.hostname === "localhost")) {
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./sw.js")
+      .then(registration => {
+        console.log(
+          "Phase 10 Service Worker Registered:",
+          registration.scope
+        );
+      })
+      .catch(error => {
+        console.error(
+          "Service Worker Registration Failed:",
+          error
+        );
+      });
+  });
+}
+
+</script>
+</body>
+</html>
