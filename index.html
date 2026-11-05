@@ -798,16 +798,18 @@ function closePremiumPlans(){
    Firebase questions are optional; the built-in quiz works without it.
 */
 
-const firebaseConfig={
- apiKey:"YOUR_API_KEY",
- authDomain:"YOUR_AUTH_DOMAIN",
- projectId:"YOUR_PROJECT_ID",
- storageBucket:"YOUR_STORAGE_BUCKET",
- messagingSenderId:"YOUR_SENDER_ID",
- appId:"YOUR_APP_ID"
+const firebaseConfig = {
+  apiKey: "AIzaSyC7AI1XnElJacl0r-8SpHB7lWl6t3K0ZKw",
+  authDomain: "knowledgexasija.firebaseapp.com",
+  projectId: "knowledgexasija",
+  storageBucket: "knowledgexasija.firebasestorage.app",
+  messagingSenderId: "792734186747",
+  appId: "1:792734186747:web:f37808d81e9f26cfe4045e",
+  measurementId: "G-CE6Y74T1MD"
 };
 
 let db=null;
+let auth = null;
 
 function firebaseConfigIsReady(){
  return firebaseConfig.apiKey!=="YOUR_API_KEY" &&
@@ -828,8 +830,9 @@ async function loadFirebaseQuestions(){
 
   if(!firebase.apps.length){
    firebase.initializeApp(firebaseConfig);
-   const auth = firebase.auth();
-  }
+}
+
+auth = firebase.auth();
 
   db=firebase.firestore();
   const snapshot=await db.collection("questions").get();
